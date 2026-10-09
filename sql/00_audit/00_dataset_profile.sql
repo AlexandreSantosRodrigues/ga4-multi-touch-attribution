@@ -1,15 +1,13 @@
 -- =============================================================================
 -- 00_dataset_profile.sql
 -- Objetivo: estabelecer o contrato inicial de volume e completude do dataset.
--- Execução: BigQuery Studio, sem instalação local.
--- Escopo: período público completo usado pelo projeto.
+-- Compatível com o esquema histórico do dataset público (2020–2021).
 -- =============================================================================
 
 WITH events AS (
   SELECT
     PARSE_DATE('%Y%m%d', event_date) AS event_date,
     event_name,
-    event_timestamp,
     user_pseudo_id,
     (
       SELECT ep.value.int_value
@@ -19,11 +17,7 @@ WITH events AS (
     ) AS session_id,
     ecommerce.transaction_id AS transaction_id,
     ecommerce.purchase_revenue AS purchase_revenue,
-    traffic_source.source AS first_user_source,
-    traffic_source.medium AS first_user_medium,
-    collected_traffic_source.manual_source AS collected_source,
-    collected_traffic_source.manual_medium AS collected_medium,
-    collected_traffic_source.gclid AS gclid
+    traffic_source.source AS first_user_source
   FROM `bigquery-public-data.ga4_obfuscated_sample_ecommerce.events_*`
   WHERE _TABLE_SUFFIX BETWEEN '20201101' AND '20210131'
 )
@@ -48,8 +42,6 @@ SELECT
     AS purchases_without_revenue,
   COUNTIF(user_pseudo_id IS NULL) AS events_without_user_id,
   COUNTIF(session_id IS NULL) AS events_without_session_id,
-  COUNTIF(event_name = 'session_start' AND collected_source IS NULL)
-    AS session_starts_without_collected_source,
   COUNTIF(event_name = 'session_start' AND first_user_source IS NULL)
     AS session_starts_without_first_user_source,
   ROUND(SUM(IF(event_name = 'purchase', COALESCE(purchase_revenue, 0), 0)), 2)
