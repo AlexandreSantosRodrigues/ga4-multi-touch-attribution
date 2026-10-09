@@ -5,10 +5,11 @@
 -- Autorreferências internas conhecidas são excluídas da seleção.
 -- =============================================================================
 
-CREATE OR REPLACE TABLE
+DROP TABLE IF EXISTS
+  `ga4-attribution-project-511113.ga4_attribution.int_sessions`;
+
+CREATE OR REPLACE VIEW
   `ga4-attribution-project-511113.ga4_attribution.int_sessions`
-PARTITION BY session_date
-CLUSTER BY user_pseudo_id, source, medium
 AS
 
 WITH valid_events AS (
@@ -142,8 +143,7 @@ SELECT
   s.city,
 
   s.self_referral_event_count,
-  s.self_referral_event_count > 0 AS had_self_referral_removed,
-  CURRENT_TIMESTAMP() AS processed_at
+  s.self_referral_event_count > 0 AS had_self_referral_removed
 
 FROM session_rollup AS s
 LEFT JOIN external_channel_candidates AS c
