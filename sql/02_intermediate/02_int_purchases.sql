@@ -1,13 +1,41 @@
 -- =============================================================================
 -- 02_int_purchases.sql
 -- Camada Intermediate: uma linha por compra canônica.
--- Chave:
---   ID válido -> user_pseudo_id + transaction_id
---   ID ausente/placeholder -> user_pseudo_id + event_timestamp
--- Duplicatas técnicas mantêm o primeiro evento observado.
+--
+-- Evidências usadas:
+--   - 5.692 eventos purchase na fonte;
+--   - 883 transaction_id = '(not set)';
+--   - 23 transaction_id nulos;
+--   - IDs podem colidir entre usuários por causa da ofuscação;
+--   - user_pseudo_id + transaction_id elimina conflitos;
+--   - 320 eventos técnicos excedentes devem ser removidos;
+--   - resultado esperado: 5.372 compras canônicas.
+--
+-- O bloco inicial torna o script idempotente: funciona se o objeto ainda não
+-- existir, se for uma TABLE ou se for uma VIEW.
 -- =============================================================================
 
-CREATE OR REPLACE VIEW
+DECLARE existing_object_type STRING DEFAULT (
+  SELECT table_type
+  FROM
+    `ga4-attribution-project-511113.ga4_attribution.INFORMATION_SCHEMA.TABLES`
+  WHERE table_name = 'int_purchases'
+  LIMIT 1
+);
+
+IF existing_object_type = 'BASE TABLE' THEN
+  EXECUTE IMMEDIATE '''
+    DROP TABLE
+      `ga4-attribution-project-511113.ga4_attribution.int_purchases`
+  ''';
+ELSEIF existing_object_type = 'VIEW' THEN
+  EXECUTE IMMEDIATE '''
+    DROP VIEW
+      `ga4-attribution-project-511113.ga4_attribution.int_purchases`
+  ''';
+END IF;
+
+CREATE VIEW
   `ga4-attribution-project-511113.ga4_attribution.int_purchases`
 AS
 
@@ -20,13 +48,15 @@ WITH purchase_events AS (
     NULLIF(TRIM(transaction_id), '') AS raw_transaction_id,
     purchase_revenue,
     total_item_quantity
-  FROM `ga4-attribution-project-511113.ga4_attribution.stg_ga4_events`
+  FROM
+    `ga4-attribution-project-511113.ga4_attribution.stg_ga4_events`
   WHERE event_name = 'purchase'
 ),
 
 classified AS (
   SELECT
     *,
+
     CASE
       WHEN raw_transaction_id IS NULL THEN 'missing'
       WHEN LOWER(raw_transaction_id) IN (
@@ -46,23 +76,27 @@ classified AS (
         )
       THEN CONCAT(
         'txn|',
-        COALESCE(user_pseudo_id, 'unknown'),
+        user_pseudo_id,
         '|',
         raw_transaction_id
       )
       ELSE CONCAT(
         'evt|',
-        COALESCE(user_pseudo_id, 'unknown'),
+        user_pseudo_id,
         '|',
         CAST(UNIX_MICROS(purchase_ts) AS STRING)
       )
     END AS purchase_key
+
   FROM purchase_events
+  WHERE user_pseudo_id IS NOT NULL
+    AND session_id IS NOT NULL
 ),
 
 ranked AS (
   SELECT
     *,
+
     COUNT(*) OVER (
       PARTITION BY purchase_key
     ) AS source_event_count,
@@ -74,16 +108,19 @@ ranked AS (
         purchase_revenue DESC,
         total_item_quantity DESC
     ) AS purchase_row_number
+
   FROM classified
 )
 
 SELECT
   purchase_key,
+
   CONCAT(
     user_pseudo_id,
     '|',
     CAST(session_id AS STRING)
   ) AS session_key,
+
   user_pseudo_id,
   session_id,
   purchase_date,
