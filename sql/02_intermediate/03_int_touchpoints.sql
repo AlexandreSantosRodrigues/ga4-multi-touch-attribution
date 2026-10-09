@@ -100,7 +100,10 @@ eligible_touchpoints AS (
     `ga4-attribution-project-511113.ga4_attribution.int_sessions` AS s
     ON p.user_pseudo_id = s.user_pseudo_id
    AND s.session_start_ts <= p.purchase_ts
-   AND s.session_start_ts > p.journey_start_ts
+   AND (
+     s.session_start_ts > p.journey_start_ts
+     OR s.session_key = p.session_key
+   )
 )
 
 SELECT
