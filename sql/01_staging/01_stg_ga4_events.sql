@@ -1,18 +1,11 @@
 -- =============================================================================
 -- 01_stg_ga4_events.sql
--- Camada: Staging
--- Destino: ga4-attribution-project-511113.ga4_attribution.stg_ga4_events
--- Estratégia: materialização particionada e clusterizada para reduzir releituras
--- do dataset bruto e padronizar a extração de parâmetros aninhados.
+-- Camada Staging: eventos GA4 achatados e tipados.
+-- Execute o arquivo inteiro no BigQuery Studio.
 -- =============================================================================
 
 CREATE OR REPLACE TABLE
   `ga4-attribution-project-511113.ga4_attribution.stg_ga4_events`
-PARTITION BY event_date
-CLUSTER BY event_name, user_pseudo_id
-OPTIONS (
-  description = 'Eventos GA4 tipados e achatados a partir da amostra pública; camada staging do pipeline de atribuição.'
-)
 AS
 
 SELECT
