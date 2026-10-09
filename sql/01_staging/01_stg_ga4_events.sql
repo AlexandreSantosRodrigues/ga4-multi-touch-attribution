@@ -1,7 +1,6 @@
 -- =============================================================================
 -- 01_stg_ga4_events.sql
 -- Camada Staging: eventos GA4 achatados e tipados.
--- Execute o arquivo inteiro no BigQuery Studio.
 -- =============================================================================
 
 DROP TABLE IF EXISTS
