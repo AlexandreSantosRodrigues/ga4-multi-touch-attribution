@@ -4,8 +4,13 @@
 -- Execute o arquivo inteiro no BigQuery Studio.
 -- =============================================================================
 
-CREATE OR REPLACE TABLE
+DROP TABLE IF EXISTS
+  `ga4-attribution-project-511113.ga4_attribution.stg_ga4_events`;
+
+CREATE TABLE
   `ga4-attribution-project-511113.ga4_attribution.stg_ga4_events`
+PARTITION BY event_date
+CLUSTER BY event_name, user_pseudo_id
 AS
 
 SELECT
