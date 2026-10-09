@@ -5,9 +5,6 @@
 -- Autorreferências internas conhecidas são excluídas da seleção.
 -- =============================================================================
 
-DROP TABLE IF EXISTS
-  `ga4-attribution-project-511113.ga4_attribution.int_sessions`;
-
 CREATE OR REPLACE VIEW
   `ga4-attribution-project-511113.ga4_attribution.int_sessions`
 AS
