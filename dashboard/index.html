@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Dashboard de atribuição multi-touch construído com GA4, BigQuery e cinco modelos de atribuição.">
+  <title>GA4 Attribution Intelligence</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#overview" aria-label="Voltar ao início">
+      <span class="brand-mark">A</span>
+      <span><strong>Attribution</strong><small>Intelligence</small></span>
+    </a>
+    <nav>
+      <a href="#overview">Visão geral</a>
+      <a href="#channels">Canais</a>
+      <a href="#journeys">Jornadas</a>
+      <a href="#methodology">Metodologia</a>
+    </nav>
+    <a class="github-link" href="https://github.com/AlexandreSantosRodrigues/ga4-multi-touch-attribution" target="_blank" rel="noreferrer">GitHub ↗</a>
+  </header>
+
+  <main>
+    <section class="hero" id="overview">
+      <div>
+        <p class="eyebrow">GA4 · BIGQUERY · MULTI-TOUCH</p>
+        <h1>O canal que fecha a venda<br><span>nem sempre criou a demanda.</span></h1>
+        <p class="hero-copy">Cinco modelos de atribuição aplicados a jornadas reais do Google Merchandise Store, com limpeza de autorreferências, deduplicação de compras e conservação integral de receita.</p>
+      </div>
+      <div class="hero-meta">
+        <span>Período <strong id="period">—</strong></span>
+        <span>Janela <strong id="window">—</strong></span>
+        <span>Meia-vida <strong id="halfLife">—</strong></span>
+      </div>
+    </section>
+
+    <section class="kpi-grid" aria-label="Indicadores principais">
+      <article class="kpi featured"><span>Jornadas analisadas</span><strong id="totalJourneys">—</strong><small>compras canônicas</small></article>
+      <article class="kpi"><span>Receita reconciliada</span><strong id="canonicalRevenue">—</strong><small>nos cinco modelos</small></article>
+      <article class="kpi"><span>Jornadas multi-touch</span><strong id="multiTouchPct">—</strong><small id="multiTouchCount">—</small></article>
+      <article class="kpi"><span>Jornadas multicanal</span><strong id="multiChannelPct">—</strong><small id="multiChannelCount">—</small></article>
+      <article class="kpi"><span>Média de touchpoints</span><strong id="avgTouchpoints">—</strong><small>sessões por compra</small></article>
+      <article class="kpi"><span>P90 da jornada</span><strong id="p90Duration">—</strong><small>90% convertem até aqui</small></article>
+    </section>
+
+    <section class="panel" id="channels">
+      <div class="section-heading">
+        <div><p class="eyebrow">MODELOS DE ATRIBUIÇÃO</p><h2>Desempenho por canal</h2><p>Alterne o modelo e a métrica para observar como a leitura de performance muda.</p></div>
+        <div class="controls">
+          <label>Modelo<select id="modelSelect">
+            <option value="last_click">Last-Click</option>
+            <option value="first_click">First-Click</option>
+            <option value="linear">Linear</option>
+            <option value="time_decay">Time-Decay</option>
+            <option value="position_based">Position-Based</option>
+          </select></label>
+          <label>Métrica<select id="metricSelect">
+            <option value="conversions">Conversões</option>
+            <option value="revenue">Receita</option>
+          </select></label>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div id="channelBars" class="bar-chart" aria-live="polite"></div>
+      </div>
+      <div class="callout-grid">
+        <article><span class="callout-number">+62%</span><h3>Google CPC no First-Click</h3><p>O canal recebe 81 conversões no First-Click e 50 no Last-Click, evidenciando seu papel no início das jornadas.</p></article>
+        <article><span class="callout-number">−26%</span><h3>Não atribuído no First-Click</h3><p>O tráfego sem origem identificável cresce no fim da jornada e concentra mais crédito no Last-Click.</p></article>
+        <article><span class="callout-number">0</span><h3>Autorreferências no ranking</h3><p>Referências internas da própria loja foram removidas antes da atribuição.</p></article>
+      </div>
+    </section>
+
+    <section class="split" id="journeys">
+      <article class="panel">
+        <div class="section-heading compact"><div><p class="eyebrow">COMPLEXIDADE</p><h2>Touchpoints por jornada</h2></div></div>
+        <div id="touchpointBars" class="bar-chart compact-bars"></div>
+      </article>
+      <article class="panel">
+        <div class="section-heading compact"><div><p class="eyebrow">DISPOSITIVOS</p><h2>Onde a conversão acontece</h2></div></div>
+        <div class="device-layout">
+          <div id="deviceDonut" class="donut" role="img" aria-label="Participação por dispositivo"></div>
+          <div id="deviceLegend" class="legend"></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">TENDÊNCIA TEMPORAL</p><h2>Conversões e receita por mês</h2><p>A amostra pública cobre novembro de 2020 a janeiro de 2021.</p></div>
+      </div>
+      <div id="monthlyChart" class="monthly-chart"></div>
+    </section>
+
+    <section class="panel table-panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">COMPARAÇÃO COMPLETA</p><h2>Todos os canais</h2><p>Conversões atribuídas por cada regra de crédito.</p></div>
+        <input id="channelSearch" type="search" placeholder="Buscar canal…" aria-label="Buscar canal">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Canal</th><th>First</th><th>Last</th><th>Linear</th><th>Decay</th><th>Position</th><th>Δ First × Last</th></tr></thead>
+          <tbody id="channelTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="methodology" id="methodology">
+      <div><p class="eyebrow">ENGENHARIA E QUALIDADE</p><h2>Do evento bruto à decisão</h2></div>
+      <div class="pipeline">
+        <article><span>01</span><h3>Staging</h3><p>4,3 milhões de eventos achatados a partir do esquema aninhado do GA4.</p></article>
+        <article><span>02</span><h3>Qualidade</h3><p>Autorreferências removidas, IDs inválidos tratados e compras deduplicadas.</p></article>
+        <article><span>03</span><h3>Jornadas</h3><p>Janela de 30 dias, reinício após compra e preservação da sessão de conversão.</p></article>
+        <article><span>04</span><h3>Atribuição</h3><p>Cinco modelos com conservação de 100% das conversões e da receita.</p></article>
+      </div>
+      <div class="limitations">
+        <h3>Limitações</h3>
+        <p>Os modelos são regras de distribuição de crédito, não estimativas causais. A amostra é ofuscada, contém canais agregados e possui 2.083 jornadas com ao menos um touchpoint não atribuído. Os resultados devem orientar hipóteses, não provar incrementalidade de mídia.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer><span>GA4 Multi-Touch Attribution</span><span>BigQuery · SQL · HTML · JavaScript</span><span>Alexandre Santos Rodrigues</span></footer>
+  <div id="errorState" class="error-state" hidden>Não foi possível carregar os dados do dashboard.</div>
+  <script src="./app.js"></script>
+</body>
+</html>
