@@ -31,3 +31,39 @@
 @media(prefers-reduced-motion:reduce){
   .deck{transition-duration:.01ms}
 }
+
+
+/* Visible slide-card carousel */
+.deck{
+  gap:28px;
+  padding:20px 26px 24px;
+  align-items:center;
+  transition:transform .92s cubic-bezier(.18,.82,.24,1);
+}
+.slide{
+  flex:0 0 calc(100% - 78px);
+  min-width:calc(100% - 78px);
+  width:calc(100% - 78px);
+  height:calc(100% - 20px);
+  border:1px solid rgba(23,27,24,.10);
+  border-radius:24px;
+  box-shadow:0 22px 60px rgba(20,28,23,.16);
+  opacity:.52;
+  transform:scale(.982);
+  transition:opacity .72s ease,transform .92s cubic-bezier(.18,.82,.24,1),box-shadow .92s ease;
+}
+.slide.active{
+  opacity:1;
+  transform:scale(1);
+  box-shadow:0 28px 72px rgba(20,28,23,.21);
+}
+@media(max-width:900px){
+  .deck{gap:16px;padding:12px}
+  .slide{
+    flex-basis:calc(100% - 28px);
+    min-width:calc(100% - 28px);
+    width:calc(100% - 28px);
+    height:calc(100% - 18px);
+    border-radius:16px;
+  }
+}
