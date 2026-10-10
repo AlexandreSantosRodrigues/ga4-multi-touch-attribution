@@ -1,4 +1,4 @@
-const state={data:null,model:"last_click",metric:"conversions",slide:0};\nif("scrollRestoration" in history)history.scrollRestoration="manual";
+const state={data:null,model:"last_click",metric:"conversions",slide:0};\nif(window.history&&"scrollRestoration" in window.history)window.history.scrollRestoration="manual";
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const fmt=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:2});
 const money=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0});
