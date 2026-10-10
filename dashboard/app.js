@@ -1,4 +1,4 @@
-const state={data:null,model:"last_click",metric:"conversions",slide:0};
+const state={data:null,model:"last_click",metric:"conversions",slide:0};\nif("scrollRestoration" in history)history.scrollRestoration="manual";
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const fmt=new Intl.NumberFormat("pt-BR",{maximumFractionDigits:2});
 const money=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0});
@@ -89,5 +89,5 @@ function validateData(d){
 }
 async function init(){try{const res=await fetch("./data/dashboard_data.json");if(!res.ok)throw new Error("HTTP "+res.status);state.data=await res.json();validateData(state.data);hydrateMeta(state.data);hydrateKpis(state.data.kpis);renderChannelBars();renderTouchpoints();renderDevices();renderMonths();renderTable();bind();const match=location.hash.match(/slide-(\d+)/);goToSlide(match?Number(match[1])-1:0)}catch(err){console.error(err);$("#errorState").hidden=false}}
 window.addEventListener("resize",()=>goToSlide(state.slide,false));
-window.addEventListener("pageshow",()=>goToSlide(slideFromHash(),false));
+window.addEventListener("pageshow",()=>{window.scrollTo(0,0);goToSlide(slideFromHash(),false)});
 init();
