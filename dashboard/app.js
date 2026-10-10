@@ -13,6 +13,12 @@ function renderTouchpoints(){const rows=state.data.touchpoint_distribution,max=M
 function renderDevices(){const colors=["#176b46","#7da58e","#cbd7cf","#aebdb4"];let cursor=0;const stops=state.data.devices.map((d,i)=>{const start=cursor;cursor+=d.journey_share_pct;return colors[i%colors.length]+" "+start+"% "+cursor+"%"});$("#deviceDonut").style.background="conic-gradient("+stops.join(",")+")";$("#deviceLegend").innerHTML=state.data.devices.map((d,i)=>'<div class="legend-row"><span class="legend-dot" style="background:'+colors[i%colors.length]+'"></span><span>'+esc(d.device_category)+'</span><strong>'+pct(d.journey_share_pct)+'</strong></div>').join("")}
 function renderMonths(){const rows=state.data.monthly_trend,max=Math.max(...rows.map(r=>r.revenue),1);$("#monthlyChart").innerHTML=rows.map(r=>'<article class="month-card"><span class="month">'+esc(r.month)+'</span><strong>'+fmt.format(r.journeys)+' jornadas</strong><small>'+money.format(r.revenue)+'</small><small>'+fmt.format(r.avg_touchpoints)+' touchpoints</small><div class="mini-line"><span style="width:'+(r.revenue/max*100)+'%"></span></div></article>').join("")}
 function deltaClass(v){return v>0?"delta-pos":v<0?"delta-neg":""}function renderTable(filter=""){const q=filter.trim().toLowerCase(),rows=state.data.channels.filter(r=>r.channel.toLowerCase().includes(q)).sort((a,b)=>b.last_click_conversions-a.last_click_conversions);$("#channelTable").innerHTML=rows.map(r=>'<tr><td>'+esc(r.channel)+'</td><td>'+fmt.format(r.first_click_conversions)+'</td><td>'+fmt.format(r.last_click_conversions)+'</td><td>'+fmt.format(r.linear_conversions)+'</td><td>'+fmt.format(r.time_decay_conversions)+'</td><td>'+fmt.format(r.position_based_conversions)+'</td><td class="'+deltaClass(r.first_click_vs_last_click_pct)+'">'+(r.first_click_vs_last_click_pct>0?"+":"")+pct(r.first_click_vs_last_click_pct)+'</td></tr>').join("")}
+function resetViewport(){
+  window.scrollTo(0,0);
+  requestAnimationFrame(()=>window.scrollTo(0,0));
+  setTimeout(()=>window.scrollTo(0,0),250);
+  setTimeout(()=>window.scrollTo(0,0),1000);
+}
 function goToSlide(index,updateHash=true){
   const slides=[...document.querySelectorAll(".slide")];
   index=Math.max(0,Math.min(index,slides.length-1));
@@ -88,7 +94,7 @@ function validateData(d){
   close(sum(d.monthly_trend,"revenue"),expectedRevenue,.01,"receita mensal");
   return true;
 }
-async function init(){try{const res=await fetch("./data/dashboard_data.json");if(!res.ok)throw new Error("HTTP "+res.status);state.data=await res.json();validateData(state.data);hydrateMeta(state.data);hydrateKpis(state.data.kpis);renderChannelBars();renderTouchpoints();renderDevices();renderMonths();renderTable();bind();const match=location.hash.match(/slide-(\d+)/);goToSlide(match?Number(match[1])-1:0)}catch(err){console.error(err);$("#errorState").hidden=false}}
+async function init(){try{const res=await fetch("./data/dashboard_data.json");if(!res.ok)throw new Error("HTTP "+res.status);state.data=await res.json();validateData(state.data);hydrateMeta(state.data);hydrateKpis(state.data.kpis);renderChannelBars();renderTouchpoints();renderDevices();renderMonths();renderTable();bind();const match=location.hash.match(/slide-(\d+)/);goToSlide(match?Number(match[1])-1:0);resetViewport()}catch(err){console.error(err);$("#errorState").hidden=false}}
 window.addEventListener("resize",()=>goToSlide(state.slide,false));
-window.addEventListener("pageshow",()=>{window.scrollTo(0,0);goToSlide(slideFromHash(),false)});
+window.addEventListener("pageshow",()=>{goToSlide(slideFromHash(),false);resetViewport()});
 init();
