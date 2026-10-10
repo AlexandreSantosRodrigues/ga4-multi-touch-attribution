@@ -12,8 +12,64 @@ function renderTouchpoints(){const rows=state.data.touchpoint_distribution,max=M
 function renderDevices(){const colors=["#176b46","#7da58e","#cbd7cf","#aebdb4"];let cursor=0;const stops=state.data.devices.map((d,i)=>{const start=cursor;cursor+=d.journey_share_pct;return colors[i%colors.length]+" "+start+"% "+cursor+"%"});$("#deviceDonut").style.background="conic-gradient("+stops.join(",")+")";$("#deviceLegend").innerHTML=state.data.devices.map((d,i)=>'<div class="legend-row"><span class="legend-dot" style="background:'+colors[i%colors.length]+'"></span><span>'+esc(d.device_category)+'</span><strong>'+pct(d.journey_share_pct)+'</strong></div>').join("")}
 function renderMonths(){const rows=state.data.monthly_trend,max=Math.max(...rows.map(r=>r.revenue),1);$("#monthlyChart").innerHTML=rows.map(r=>'<article class="month-card"><span class="month">'+esc(r.month)+'</span><strong>'+fmt.format(r.journeys)+' jornadas</strong><small>'+money.format(r.revenue)+'</small><small>'+fmt.format(r.avg_touchpoints)+' touchpoints</small><div class="mini-line"><span style="width:'+(r.revenue/max*100)+'%"></span></div></article>').join("")}
 function deltaClass(v){return v>0?"delta-pos":v<0?"delta-neg":""}function renderTable(filter=""){const q=filter.trim().toLowerCase(),rows=state.data.channels.filter(r=>r.channel.toLowerCase().includes(q)).sort((a,b)=>b.last_click_conversions-a.last_click_conversions);$("#channelTable").innerHTML=rows.map(r=>'<tr><td>'+esc(r.channel)+'</td><td>'+fmt.format(r.first_click_conversions)+'</td><td>'+fmt.format(r.last_click_conversions)+'</td><td>'+fmt.format(r.linear_conversions)+'</td><td>'+fmt.format(r.time_decay_conversions)+'</td><td>'+fmt.format(r.position_based_conversions)+'</td><td class="'+deltaClass(r.first_click_vs_last_click_pct)+'">'+(r.first_click_vs_last_click_pct>0?"+":"")+pct(r.first_click_vs_last_click_pct)+'</td></tr>').join("")}
-function goToSlide(index){const slides=[...document.querySelectorAll(".slide")];index=Math.max(0,Math.min(index,slides.length-1));const offset=slides[index].offsetLeft-slides[0].offsetLeft;$("#deck").style.transform="translate3d("+(-offset)+"px,0,0)";slides.forEach((s,i)=>s.classList.toggle("active",i===index));[...document.querySelectorAll(".nav-dot")].forEach((b,i)=>b.classList.toggle("active",i===index));state.slide=index;$("#currentSlide").textContent=String(index+1).padStart(2,"0");$("#progressBar").style.width=((index+1)/slides.length*100)+"%";history.replaceState(null,"","#slide-"+(index+1))}
-function bind(){$("#modelSelect").addEventListener("change",e=>{state.model=e.target.value;renderChannelBars()});$("#metricSelect").addEventListener("change",e=>{state.metric=e.target.value;renderChannelBars()});$("#channelSearch").addEventListener("input",e=>renderTable(e.target.value));$("#prevSlide").addEventListener("click",()=>goToSlide(state.slide-1));$("#nextSlide").addEventListener("click",()=>goToSlide(state.slide+1));[...document.querySelectorAll(".nav-dot")].forEach((b,i)=>b.addEventListener("click",()=>goToSlide(i)));document.addEventListener("keydown",e=>{if(["ArrowRight","PageDown"," "].includes(e.key)){e.preventDefault();goToSlide(state.slide+1)}if(["ArrowLeft","PageUp"].includes(e.key)){e.preventDefault();goToSlide(state.slide-1)}if(e.key==="Home")goToSlide(0);if(e.key==="End")goToSlide(6)});let wheelLocked=false;document.addEventListener("wheel",e=>{if(e.target.closest(".comparison-table-wrap")&&e.target.closest(".comparison-table-wrap").scrollHeight>e.target.closest(".comparison-table-wrap").clientHeight)return;e.preventDefault();if(wheelLocked||Math.abs(e.deltaY)+Math.abs(e.deltaX)<28)return;wheelLocked=true;const direction=Math.abs(e.deltaX)>Math.abs(e.deltaY)?Math.sign(e.deltaX):Math.sign(e.deltaY);goToSlide(state.slide+(direction>0?1:-1));setTimeout(()=>wheelLocked=false,960)},{passive:false});let startX=0,startY=0;document.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;startY=e.touches[0].clientY},{passive:true});document.addEventListener("touchend",e=>{const dx=e.changedTouches[0].clientX-startX,dy=e.changedTouches[0].clientY-startY;if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy))goToSlide(state.slide+(dx<0?1:-1))},{passive:true})}
+function goToSlide(index,updateHash=true){
+  const slides=[...document.querySelectorAll(".slide")];
+  index=Math.max(0,Math.min(index,slides.length-1));
+  const offset=slides[index].offsetLeft-slides[0].offsetLeft;
+  $("#deck").style.transform="translate3d("+(-offset)+"px,0,0)";
+  slides.forEach((slide,i)=>{
+    const active=i===index;
+    slide.classList.toggle("active",active);
+    slide.setAttribute("aria-hidden",String(!active));
+  });
+  [...document.querySelectorAll(".nav-dot")].forEach((button,i)=>{
+    const active=i===index;
+    button.classList.toggle("active",active);
+    if(active)button.setAttribute("aria-current","page");else button.removeAttribute("aria-current");
+  });
+  state.slide=index;
+  $("#currentSlide").textContent=String(index+1).padStart(2,"0");
+  $("#progressBar").style.width=((index+1)/slides.length*100)+"%";
+  const nextHash="#slide-"+(index+1);
+  if(updateHash&&location.hash!==nextHash)history.replaceState(null,"",nextHash);
+}
+function slideFromHash(){
+  const match=location.hash.match(/^#slide-(\d+)$/);
+  return match?Number(match[1])-1:0;
+}
+function bind(){
+  $("#modelSelect").addEventListener("change",e=>{state.model=e.target.value;renderChannelBars()});
+  $("#metricSelect").addEventListener("change",e=>{state.metric=e.target.value;renderChannelBars()});
+  $("#channelSearch").addEventListener("input",e=>renderTable(e.target.value));
+  $("#prevSlide").addEventListener("click",()=>goToSlide(state.slide-1));
+  $("#nextSlide").addEventListener("click",()=>goToSlide(state.slide+1));
+  $(".monogram").addEventListener("click",e=>{e.preventDefault();goToSlide(0)});
+  [...document.querySelectorAll(".nav-dot")].forEach((button,i)=>button.addEventListener("click",()=>goToSlide(i)));
+  window.addEventListener("hashchange",()=>goToSlide(slideFromHash(),false));
+  document.addEventListener("keydown",e=>{
+    if(["ArrowRight","PageDown"," "].includes(e.key)){e.preventDefault();goToSlide(state.slide+1)}
+    if(["ArrowLeft","PageUp"].includes(e.key)){e.preventDefault();goToSlide(state.slide-1)}
+    if(e.key==="Home")goToSlide(0);
+    if(e.key==="End")goToSlide(6);
+  });
+  let wheelLocked=false;
+  document.addEventListener("wheel",e=>{
+    const table=e.target.closest(".comparison-table-wrap");
+    if(table&&table.scrollHeight>table.clientHeight)return;
+    e.preventDefault();
+    if(wheelLocked||Math.abs(e.deltaY)+Math.abs(e.deltaX)<28)return;
+    wheelLocked=true;
+    const direction=Math.abs(e.deltaX)>Math.abs(e.deltaY)?Math.sign(e.deltaX):Math.sign(e.deltaY);
+    goToSlide(state.slide+(direction>0?1:-1));
+    setTimeout(()=>wheelLocked=false,960);
+  },{passive:false});
+  let startX=0,startY=0;
+  document.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;startY=e.touches[0].clientY},{passive:true});
+  document.addEventListener("touchend",e=>{
+    const dx=e.changedTouches[0].clientX-startX,dy=e.changedTouches[0].clientY-startY;
+    if(Math.abs(dx)>45&&Math.abs(dx)>Math.abs(dy))goToSlide(state.slide+(dx<0?1:-1));
+  },{passive:true});
+}
 function validateData(d){
   const sum=(rows,key)=>rows.reduce((total,row)=>total+Number(row[key]||0),0);
   const close=(actual,expected,tolerance,label)=>{if(Math.abs(actual-expected)>tolerance)throw new Error("Falha de reconciliação: "+label+" = "+actual+"; esperado = "+expected)};
@@ -32,5 +88,6 @@ function validateData(d){
   return true;
 }
 async function init(){try{const res=await fetch("./data/dashboard_data.json");if(!res.ok)throw new Error("HTTP "+res.status);state.data=await res.json();validateData(state.data);hydrateMeta(state.data);hydrateKpis(state.data.kpis);renderChannelBars();renderTouchpoints();renderDevices();renderMonths();renderTable();bind();const match=location.hash.match(/slide-(\d+)/);goToSlide(match?Number(match[1])-1:0)}catch(err){console.error(err);$("#errorState").hidden=false}}
-window.addEventListener("resize",()=>goToSlide(state.slide));
+window.addEventListener("resize",()=>goToSlide(state.slide,false));
+window.addEventListener("pageshow",()=>goToSlide(slideFromHash(),false));
 init();
